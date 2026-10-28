@@ -4,6 +4,8 @@ English | [中文](README.zh.md)
 
 A DeepSeek Harness (`dsh`) client plugin that replaces the model button in the composer with its own picker: the current model and reasoning effort sit on the button, and one panel holds the model list, your favorite models, and a reasoning-effort slider.
 
+<img src="assets/screenshot-panel.png" width="306" alt="The picker panel: a search field, a Favorites group, a provider group of models with the current one checked, and the reasoning-effort slider set to High">
+
 ## Features
 
 - **Direct model picking.** One panel lists every model from the harness's own model catalog, grouped by provider. A search field appears when more than four models are available. Clicking a row switches the session's model for the next request.
