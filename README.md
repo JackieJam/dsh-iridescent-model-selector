@@ -17,7 +17,7 @@ A DeepSeek Harness (`dsh`) client plugin that replaces the model button in the c
 
 ## Compatibility
 
-Tested on **DeepSeek Harness Desktop 0.2.1-rc.3**, and `engines.dsh` is pinned to that version.
+Tested on **DeepSeek Harness Desktop 0.2.1-rc.3 and 0.2.1-rc.5** (`engines.dsh`: `>=0.2.1-rc.3 <0.3.0-0`).
 
 The plugin reads the per-session model directory (`modelDirectories`) that the built-in `@deepseek-ai/dsh-client-ui-model-selection` plugin provides. That service is an internal detail of the harness, so a later harness release can change it. Keep the built-in model-selection plugin enabled; this plugin does nothing without it.
 

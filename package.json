@@ -1,6 +1,6 @@
 {
   "name": "dsh-iridescent-model-selector",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Replaces the DSH composer model button with a direct model picker, model favorites, and an aurora reasoning-effort slider.",
   "license": "MIT",
   "author": "JackieJam",
@@ -10,7 +10,7 @@
   },
   "homepage": "https://github.com/JackieJam/dsh-iridescent-model-selector#readme",
   "keywords": ["deepseek", "harness", "dsh", "dsh-plugin", "model-selector", "reasoning-effort"],
-  "engines": { "dsh": "0.2.1-rc.3" },
+  "engines": { "dsh": ">=0.2.1-rc.3 <0.3.0-0" },
   "type": "module",
   "exports": {
     ".": "./index.js",

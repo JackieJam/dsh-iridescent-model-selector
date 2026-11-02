@@ -17,7 +17,7 @@ DeepSeek Harness（`dsh`）客户端插件：用自己的选择器替换输入�
 
 ## 兼容性
 
-在 **DeepSeek Harness Desktop 0.2.1-rc.3** 上测试，`engines.dsh` 锁定为该版本。
+已在 **DeepSeek Harness Desktop 0.2.1-rc.3 与 0.2.1-rc.5** 上测试（`engines.dsh`: `>=0.2.1-rc.3 <0.3.0-0`）。
 
 插件读取内置插件 `@deepseek-ai/dsh-client-ui-model-selection` 提供的会话模型目录（`modelDirectories`）。这是 harness 的内部实现，后续版本可能变化。请保持内置模型选择插件处于启用状态，否则本插件不会生效。
 
