@@ -1,6 +1,6 @@
 {
   "name": "dsh-iridescent-model-selector",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Replaces the DSH composer model button with a direct model picker, model favorites, and an aurora reasoning-effort slider.",
   "license": "MIT",
   "author": "JackieJam",

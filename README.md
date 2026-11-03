@@ -8,7 +8,7 @@ A DeepSeek Harness (`dsh`) client plugin that replaces the model button in the c
 
 ## Features
 
-- **Direct model picking.** One panel lists every model from the harness's own model catalog, grouped by provider. A search field appears when more than four models are available. Clicking a row switches the session's model for the next request.
+- **Direct model picking.** One panel lists every model from the harness's own model catalog, grouped by provider. A search field appears when more than four models are available. Clicking a row switches the session's model for the next request and keeps the panel open, so you can adjust the reasoning effort in the same pass.
 - **Favorites.** Hover a row and click the star to pin a model to a Favorites group at the top of the list. Up to 24 favorites are kept in the browser's local storage.
 - **Reasoning-effort slider.** The slider has one stop for each effort level the selected model advertises. A continuous aurora gradient (cyan → blue → violet → rose) reveals more of its spectrum at higher levels, with a glow and a light sweep that grow with the level. Release the thumb or click a level name to apply it.
 - **Per-model effort memory.** The last effort you used with each provider/model pair is restored when you switch back to that model, if the model still offers it.

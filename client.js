@@ -266,6 +266,7 @@ window.__ModuleLoader__.load({
       const [draftIndex, setDraftIndex] = React.useState(null);
       const [localError, setLocalError] = React.useState(null);
       const [position, setPosition] = React.useState(null);
+      const [anchorProvider, setAnchorProvider] = React.useState(null);
       const [popKey, setPopKey] = React.useState(null);
       const popTimerRef = React.useRef(null);
       const rootRef = React.useRef(null);
@@ -282,12 +283,14 @@ window.__ModuleLoader__.load({
         if (popTimerRef.current) clearTimeout(popTimerRef.current);
       }, []);
       const pending = state.pending !== null;
+      const activeSelection = state.pending ?? state.current;
       const groups = React.useMemo(() => [...state.groups].sort((a, b) => {
-        const rank = (group) => group.id === state.current?.provider ? -1 : group.id === 'deepseek-account' ? 0 : group.id === 'deepseek-official' ? 1 : 2;
+        const topProvider = open ? anchorProvider : activeSelection?.provider;
+        const rank = (group) => group.id === topProvider ? -1 : group.id === 'deepseek-account' ? 0 : group.id === 'deepseek-official' ? 1 : 2;
         return rank(a) - rank(b);
-      }), [state.groups, state.current?.provider]);
-      const group = groups.find((item) => item.id === state.current?.provider);
-      const model = group?.models.find((item) => item.id === state.current?.model);
+      }), [state.groups, open, anchorProvider, activeSelection?.provider]);
+      const group = groups.find((item) => item.id === activeSelection?.provider);
+      const model = group?.models.find((item) => item.id === activeSelection?.model);
       const reasoning = model?.reasoning;
       const efforts = React.useMemo(() => {
         if (!reasoning || !Array.isArray(reasoning.efforts) || reasoning.efforts.length === 0) return [];
@@ -295,7 +298,7 @@ window.__ModuleLoader__.load({
         return reasoning.defaultEffort === undefined ? [{ id: undefined, name: t('effort.default') }, ...options] : options;
       }, [reasoning, t]);
       const n = efforts.length;
-      const effective = state.current?.reasoningEffort ?? reasoning?.defaultEffort;
+      const effective = activeSelection?.reasoningEffort ?? reasoning?.defaultEffort;
       const matchingIndex = efforts.findIndex((effort) => effort.id === effective);
       const staleEffort = n > 0 && effective !== undefined && matchingIndex < 0;
       const selectedIndex = Math.max(0, matchingIndex);
@@ -307,7 +310,6 @@ window.__ModuleLoader__.load({
       const filtered = groups.map((entry) => ({
         ...entry,
         models: entry.models.filter((item) => !needle || `${item.name} ${item.id} ${entry.name}`.toLocaleLowerCase().includes(needle))
-          .sort((a, b) => Number(b.id === state.current?.model && entry.id === state.current?.provider) - Number(a.id === state.current?.model && entry.id === state.current?.provider))
       })).filter((entry) => entry.models.length > 0);
       const [favoriteKeys, setFavoriteKeys] = React.useState(readFavorites);
       const favoriteSet = React.useMemo(() => new Set(favoriteKeys), [favoriteKeys]);
@@ -333,7 +335,7 @@ window.__ModuleLoader__.load({
       const displayGroups = favoriteModels.length ? [{ id: '__favorites__', name: t('favorites'), models: favoriteModels }, ...filtered] : filtered;
       const showHeaders = displayGroups.length > 1;
       const visibleKeys = displayGroups.flatMap((entry) => entry.models.map((item) => selectionKey({ provider: entry.id === '__favorites__' ? item._providerId : entry.id, model: item.id })));
-      const selectedKey = state.current ? selectionKey(state.current) : null;
+      const selectedKey = activeSelection ? selectionKey(activeSelection) : null;
       const tabStopKey = visibleKeys.includes(focusedKey) ? focusedKey : visibleKeys.includes(selectedKey) ? selectedKey : visibleKeys[0];
       const modelLabel = model?.name ?? (state.status === 'loading' ? t('trigger.loading') : t('trigger.select'));
       const effortLabel = model ? currentEffort?.name ?? state.retainedEffort ?? (staleEffort ? effective : undefined) : undefined;
@@ -343,7 +345,7 @@ window.__ModuleLoader__.load({
         : undefined;
       const committedP = n > 1 && matchingIndex >= 0 ? matchingIndex / (n - 1) : 0;
 
-      React.useEffect(() => { setDraftIndex(null); }, [state.current?.provider, state.current?.model, state.current?.reasoningEffort]);
+      React.useEffect(() => { setDraftIndex(null); }, [activeSelection?.provider, activeSelection?.model, activeSelection?.reasoningEffort]);
       React.useEffect(() => { if (locked) { setOpen(false); setDraftIndex(null); } }, [locked]);
       React.useEffect(() => {
         if (!open) return undefined;
@@ -385,6 +387,9 @@ window.__ModuleLoader__.load({
 
       if (!available) return null;
       const openPanel = () => {
+        if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
+        setClosing(false);
+        setAnchorProvider(activeSelection?.provider ?? null);
         setQuery(''); setFocusedKey(null); setDraftIndex(null); setLocalError(null); setOpen(true);
         lastActionRef.current = { kind: 'load' };
         Promise.resolve(load()).catch(setLocalError);
@@ -398,7 +403,7 @@ window.__ModuleLoader__.load({
         requestAnimationFrame(() => triggerRef.current?.focus());
       };
       const runSelect = async (selection, effortToRemember) => {
-        if (locked || pending) return;
+        if (locked) return;
         lastActionRef.current = { kind: 'select', selection, effortToRemember };
         setLocalError(null);
         try {
@@ -411,16 +416,16 @@ window.__ModuleLoader__.load({
       };
       const chooseModel = (provider, nextModel) => {
         const selection = { provider, model: nextModel.id };
-        if (locked || pending || sameModel(state.current, selection)) return;
-        if (state.current) remember(state.current, effective);
+        if (locked || sameModel(activeSelection, selection)) return;
+        if (activeSelection) remember(activeSelection, effective);
         const effort = savedEffort(provider, nextModel) ?? nextModel.reasoning?.defaultEffort;
         if (effort !== undefined) selection.reasoningEffort = effort;
         runSelect(selection, effort);
       };
       const chooseEffort = (index) => {
         const choice = efforts[index];
-        if (!choice || !state.current || locked || pending || choice.id === effective) { setDraftIndex(null); return; }
-        const selection = { provider: state.current.provider, model: state.current.model };
+        if (!choice || !activeSelection || locked || choice.id === effective) { setDraftIndex(null); return; }
+        const selection = { provider: activeSelection.provider, model: activeSelection.model };
         if (choice.id !== undefined) selection.reasoningEffort = choice.id;
         runSelect(selection, choice.id);
       };
@@ -452,7 +457,7 @@ window.__ModuleLoader__.load({
         '--irm-shine-o': (0.8 * p).toFixed(2),
         '--irm-shine-dur': `${(4.6 - 2 * p).toFixed(2)}s`
       };
-      const sliderDisabled = locked || pending || n < 2;
+      const sliderDisabled = locked || n < 2;
       const error = localError || (state.status === 'error' ? state.error : null);
 
       const children = [
@@ -493,7 +498,7 @@ window.__ModuleLoader__.load({
           ...entry.models.map((item) => {
             const providerId = entry.id === '__favorites__' ? item._providerId : entry.id;
             const rowKey = selectionKey({ provider: providerId, model: item.id });
-            const selected = state.current?.provider === providerId && state.current?.model === item.id;
+            const selected = activeSelection?.provider === providerId && activeSelection?.model === item.id;
             const favorited = favoriteSet.has(rowKey);
             const [primary, qualifier] = splitName(item.name);
             return h('div', {
@@ -504,7 +509,7 @@ window.__ModuleLoader__.load({
                 type: 'button', role: 'menuitemradio', 'aria-checked': selected,
                 tabIndex: rowKey === tabStopKey ? 0 : -1,
                 onFocus: () => setFocusedKey(rowKey),
-                'data-selected': selected, className: 'irm-option', disabled: locked || pending,
+                'data-selected': selected, className: 'irm-option', disabled: locked,
                 title: `${item.name} · ${providerName(entry, t)}`, onClick: () => chooseModel(providerId, item)
               },
                 h('span', { className: 'irm-option-name', 'data-provider-id': providerId, 'data-model-id': item.id },
@@ -513,7 +518,7 @@ window.__ModuleLoader__.load({
               h('button', {
                 type: 'button', className: 'irm-fav', tabIndex: -1, 'aria-pressed': favorited,
                 'aria-label': favorited ? t('favorite.remove') : t('favorite.add'),
-                title: favorited ? t('favorite.remove') : t('favorite.add'), disabled: locked || pending,
+                title: favorited ? t('favorite.remove') : t('favorite.add'), disabled: locked,
                 onClick: (event) => { event.stopPropagation(); toggleFavorite(providerId, item.id); }
               }, starIcon(favorited)));
           }))),
@@ -547,7 +552,7 @@ window.__ModuleLoader__.load({
           return h('button', {
             key: level.id ?? '__default__', type: 'button', className: 'irm-level',
             'data-active': !staleEffort && index === activeIndex, style: { left: `${at}%`, transform: shift },
-            title: level.description || level.name, disabled: locked || pending, onClick: () => chooseEffort(index)
+            title: level.description || level.name, disabled: locked, onClick: () => chooseEffort(index)
           }, level.name);
         }))) : h('div', { className: 'irm-note' }, model ? t('effort.unavailable') : t('selectFirst'))
       ));
@@ -557,8 +562,9 @@ window.__ModuleLoader__.load({
         className: 'irm-root',
         onKeyDown,
         onBlur: (event) => {
-          if (event.relatedTarget instanceof Node && rootRef.current?.contains(event.relatedTarget)) return;
-          closePanel();
+          if (event.relatedTarget instanceof Node && !rootRef.current?.contains(event.relatedTarget)) {
+            closePanel();
+          }
         }
       }, ...children);
     }
